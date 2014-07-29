@@ -237,13 +237,14 @@ func (u *Uploader) prepareClose() error {
 	return nil
 }
 
-func (u *Uploader) Close() error {
-	if err := u.prepareClose(); err != nil {
-		return err
+func (u *Uploader) Close() (err error) {
+	if err = u.prepareClose(); err != nil {
+		return
 	}
+
 	body, err := xml.Marshal(u.xml)
 	if err != nil {
-		return err
+		return
 	}
 	b := bytes.NewBuffer(body)
 	v := url.Values{}
@@ -251,26 +252,24 @@ func (u *Uploader) Close() error {
 
 	req, err := http.NewRequest("POST", u.url+"?"+v.Encode(), b)
 	if err != nil {
-		return err
+		return
 	}
 
-	var finalError error
 	for retries := 0; retries < 3; retries++ {
 		req.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
 		u.s3.Sign(req, u.keys)
 		resp, err := u.client.Do(req)
 		if err != nil {
-			finalError = err
 			continue
 		}
 		if resp.StatusCode != 200 {
-			finalError = newRespError(resp)
+			err = newRespError(resp)
 			continue
 		}
 		resp.Body.Close()
-		return nil
+		break
 	}
-	return finalError
+	return
 }
 
 func (u *Uploader) abort() {
