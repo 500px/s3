@@ -9,6 +9,7 @@ import (
 type metricsReadCloserDecorator struct {
 	body            io.ReadCloser
 	metricsCallback MetricsCallbackFunc
+	totalTime       time.Duration
 }
 
 // Open requests the S3 object at url. An HTTP status other than 200 is
@@ -27,7 +28,9 @@ func Open(url string, c *Config) (io.ReadCloser, error) {
 	if client == nil {
 		client = http.DefaultClient
 	}
+	start := time.Now()
 	resp, err := client.Do(r)
+	end := time.Now()
 	if err != nil {
 		return nil, err
 	}
@@ -37,19 +40,18 @@ func Open(url string, c *Config) (io.ReadCloser, error) {
 	return &metricsReadCloserDecorator{
 		body:            resp.Body,
 		metricsCallback: c.MetricsCallback,
+		totalTime:       end.Sub(start),
 	}, nil
 }
 
 func (m *metricsReadCloserDecorator) Read(p []byte) (n int, err error) {
-	start := time.Now()
 	n, err = m.body.Read(p)
-	end := time.Now()
 
 	if m.metricsCallback != nil {
 		m.metricsCallback(
 			Metrics{
 				TotalBytes: uint64(n),
-				TotalTime:  end.Sub(start),
+				TotalTime:  m.totalTime,
 			})
 	}
 
