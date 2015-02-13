@@ -226,7 +226,9 @@ func (u *Uploader) prepareClose() error {
 
 func (u *Uploader) Close() error {
 	resp, err := u.close()
-	resp.Body.Close()
+	if resp != nil && err == nil {
+		resp.Body.Close()
+	}
 	return err
 }
 
