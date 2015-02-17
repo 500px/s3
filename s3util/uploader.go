@@ -58,12 +58,17 @@ type Uploader struct {
 	}
 }
 
+type WriteCloserWithResponse interface {
+	io.WriteCloser
+	CloseWithResponse() (*http.Response, error)
+}
+
 // Create creates an S3 object at url and sends multipart upload requests as
 // data is written.
 //
 // If h is not nil, each of its entries is added to the HTTP request header.
 // If c is nil, Create uses DefaultConfig.
-func Create(url string, h http.Header, c *Config) (io.WriteCloser, error) {
+func Create(url string, h http.Header, c *Config) (WriteCloserWithResponse, error) {
 	if c == nil {
 		c = DefaultConfig
 	}
