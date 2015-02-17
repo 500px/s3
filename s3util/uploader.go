@@ -58,12 +58,17 @@ type Uploader struct {
 	}
 }
 
+type WriteCloserWithResponse interface {
+	io.WriteCloser
+	CloseWithResponse() (*http.Response, error)
+}
+
 // Create creates an S3 object at url and sends multipart upload requests as
 // data is written.
 //
 // If h is not nil, each of its entries is added to the HTTP request header.
 // If c is nil, Create uses DefaultConfig.
-func Create(url string, h http.Header, c *Config) (io.WriteCloser, error) {
+func Create(url string, h http.Header, c *Config) (WriteCloserWithResponse, error) {
 	if c == nil {
 		c = DefaultConfig
 	}
@@ -225,12 +230,25 @@ func (u *Uploader) prepareClose() error {
 }
 
 func (u *Uploader) Close() error {
+	resp, err := u.close()
+	if resp != nil && err == nil {
+		resp.Body.Close()
+	}
+	return err
+}
+
+// It's the caller's responsibility to close the response, if any.
+func (u *Uploader) CloseWithResponse() (*http.Response, error) {
+	return u.close()
+}
+
+func (u *Uploader) close() (*http.Response, error) {
 	if err := u.prepareClose(); err != nil {
-		return err
+		return nil, err
 	}
 	body, err := xml.Marshal(u.xml)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	b := bytes.NewBuffer(body)
 	v := url.Values{}
@@ -238,7 +256,7 @@ func (u *Uploader) Close() error {
 
 	req, err := http.NewRequest("POST", u.url+"?"+v.Encode(), b)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var finalError error
@@ -254,10 +272,9 @@ func (u *Uploader) Close() error {
 			finalError = newRespError(resp)
 			continue
 		}
-		resp.Body.Close()
-		return nil
+		return resp, nil
 	}
-	return finalError
+	return nil, finalError
 }
 
 func (u *Uploader) abort() {
