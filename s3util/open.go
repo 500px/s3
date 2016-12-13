@@ -75,9 +75,15 @@ func Metadata(url string, c *Config) (*http.Response, error) {
 	}
 	resp, err := client.Do(r)
 	if err != nil {
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
 		return nil, newRespError(resp)
 	}
 	return resp, nil
