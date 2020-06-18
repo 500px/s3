@@ -22,7 +22,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/kr/s3/s3util"
+	"github.com/500px/s3/s3util"
 	"io"
 	"os"
 	"strings"
@@ -65,7 +65,8 @@ func main() {
 
 func open(s string) (io.ReadCloser, error) {
 	if isURL(s) {
-		return s3util.Open(s, nil)
+		readCloser, _, err := s3util.Open(s, nil)
+		return readCloser, err
 	}
 	return os.Open(s)
 }

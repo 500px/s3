@@ -42,11 +42,11 @@ func runUpload(t *testing.T, makeCloser func(io.Reader) io.ReadCloser) *Uploader
 		t.Fatal("unexpected err", err)
 	}
 	if n != size {
-		t.Fatal("wrote %d bytes want %d", n, size)
+		t.Fatalf("wrote %d bytes want %d", n, size)
 	}
 	err = u.Close()
 	if err != nil {
-		t.Fatal("unexpected err", err)
+		t.Fatalf("unexpected err: %v", err)
 	}
 	return u
 }

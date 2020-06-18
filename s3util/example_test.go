@@ -2,7 +2,7 @@ package s3util_test
 
 import (
 	"fmt"
-	"github.com/kr/s3/s3util"
+	"github.com/500px/s3/s3util"
 	"io"
 	"os"
 )
@@ -19,7 +19,7 @@ func ExampleCreate() {
 func ExampleOpen() {
 	s3util.DefaultConfig.AccessKey = "...access key..."
 	s3util.DefaultConfig.SecretKey = "...secret key..."
-	r, _ := s3util.Open("https://mybucket.s3.amazonaws.com/log.txt", nil)
+	r, _, _ := s3util.Open("https://mybucket.s3.amazonaws.com/log.txt", nil)
 	w, _ := os.Create("out.txt")
 	io.Copy(w, r)
 	w.Close()
